@@ -1,0 +1,92 @@
+trigger:
+  branches:
+    include:
+      - master
+      - develop
+      - feature/*
+      - hotfix/*
+
+pool:
+  vmImage: 'ubuntu-18.04'
+
+variables:
+  GitVersion.SemVer: ''
+  BuildConfiguration: Release
+  EchoSln: 'Echo.sln'
+
+stages:
+  - stage: Version
+    jobs:
+      - job: configure_version
+        displayName: Configure version
+        steps:
+          - task: gittools.gitversion.gitversion-task.GitVersion@5
+            displayName: GitVersion
+            inputs:
+              useConfigFile: true
+              configFilePath: GitVersion.yml
+
+  - stage: Build
+    jobs:
+      - job: building_application
+        displayName: Building application
+        steps:
+          - bash: dotnet restore
+            displayName: Restore
+
+          - bash: dotnet build $(EchoSln) -c $(buildConfiguration)
+            displayName: Build
+
+  - stage: QA
+    jobs:
+      - job: executing_qa_analysis
+        displayName: Executing QA analysis
+        steps:
+          - task: DotNetCoreCLI@2
+            displayName: Run tests
+            inputs:
+              command: test
+              projects: $(EchoSln)
+              arguments: '-c $(buildConfiguration) --logger trx --collect:"XPlat Code Coverage" -- RunConfiguration.DisableAppDomain=true'
+
+          - task: DotNetCoreCLI@2
+            displayName: Install ReportGenerator tool
+            inputs:
+              command: custom
+              custom: tool
+              arguments: install --tool-path . dotnet-reportgenerator-globaltool
+
+          - script: ./reportgenerator -reports:$(Agent.TempDirectory)/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/coverlet/reports -reporttypes:"Cobertura"
+            displayName: Create reports
+
+          - task: PublishTestResults@2
+            displayName: Publish test results
+            inputs:
+              testRunner: VSTest
+              testResultsFiles: '**/*.trx'
+
+          - task: PublishCodeCoverageResults@1
+            displayName: Publish code coverage
+            inputs:
+              codeCoverageTool: Cobertura
+              summaryFileLocation: $(Build.SourcesDirectory)/coverlet/reports/Cobertura.xml  
+
+  - stage: publish_artifacts
+    displayName: Publish artifacts
+    jobs:
+      - job: generate_publish
+        displayName: Generate publish
+        steps:
+        - task: DotNetCoreCLI@2
+          displayName: Publish
+          inputs:
+            command: publish
+            arguments: '-c $(BuildConfiguration) -o $(Build.ArtifactStagingDirectory)'
+            publishWebProjects: True
+            zipAfterPublish: True
+
+        - task: PublishBuildArtifacts@1
+          displayName: Publish build artifacts
+          inputs:
+            pathtoPublish: '$(Build.ArtifactStagingDirectory)' 
+            artifactName: 'echo-api'
