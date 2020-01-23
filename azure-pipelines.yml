@@ -60,5 +60,26 @@ stages: # agrupador lógico da pipeline para separação de responsabilidade (ex
             codeCoverageTool: Cobertura
             summaryFileLocation: $(Build.SourcesDirectory)/coverlet/reports/Cobertura.xml
 
+- stage: publish_artifacts
+  displayName: Publish artifacts
+  jobs:
+    - job: generate_publish
+      displayName: Generate publish
+      steps:
+      - task: DotNetCoreCLI@2
+        displayName: Publish
+        inputs:
+          command: publish
+          arguments: '-c $(BuildConfiguration) -o $(Build.ArtifactStagingDirectory)'
+          publishWebProjects: True
+          zipAfterPublish: True
+
+      - task: PublishBuildArtifacts@1
+        displayName: Publish build artifacts
+        inputs:
+          pathtoPublish: '$(Build.ArtifactStagingDirectory)' 
+          artifactName: 'echo-api'
+
+
 pool:
   vmImage: 'ubuntu-18.04'
