@@ -2,6 +2,17 @@ variables:
   BuildConfiguration: Release
   EchoSln: 'Echo.sln'
 
+trigger:
+  branches:
+    include:
+      - master
+      - develop
+      - feature/*
+      - hotfix/*
+  paths:
+    exclude:
+      - docs/*
+      - readme.md
 
 stages: # agrupador lógico da pipeline para separação de responsabilidade (ex.: build, qa, e etc)
 - stage: Build
