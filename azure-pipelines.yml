@@ -2,12 +2,18 @@ variables:
   BuildConfiguration: Release
   EchoSln: 'Echo.sln'
 
-steps: # [ script | bash | pwsh | powershell | checkout | task | templateReference ]
-  - bash: dotnet restore
-    displayName: Restore
 
-  - bash: dotnet build $(EchoSln) -c $(buildConfiguration)
-    displayName: Build
+stages: # agrupador lógico da pipeline para separação de responsabilidade (ex.: build, qa, e etc)
+- stage: Build
+  jobs: # sequencia de passos executados em um agente
+    - job: building_application
+      displayName: Building application
+      steps: # [ script | bash | pwsh | powershell | checkout | task | templateReference ]
+        - bash: dotnet restore
+          displayName: Restore
+
+        - bash: dotnet build $(EchoSln) -c $(buildConfiguration)
+          displayName: Build
 
 pool:
   vmImage: 'ubuntu-18.04'
