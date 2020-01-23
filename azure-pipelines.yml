@@ -1,0 +1,10 @@
+variables:
+  BuildConfiguration: Release
+  EchoSln: 'Echo.sln'
+
+steps: # [ script | bash | pwsh | powershell | checkout | task | templateReference ]
+  - bash: dotnet restore
+    displayName: Restore
+
+  - bash: dotnet build $(EchoSln) -c $(buildConfiguration)
+    displayName: Build
