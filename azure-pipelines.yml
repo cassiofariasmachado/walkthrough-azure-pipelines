@@ -8,3 +8,6 @@ steps: # [ script | bash | pwsh | powershell | checkout | task | templateReferen
 
   - bash: dotnet build $(EchoSln) -c $(buildConfiguration)
     displayName: Build
+
+pool:
+  vmImage: 'ubuntu-18.04'
