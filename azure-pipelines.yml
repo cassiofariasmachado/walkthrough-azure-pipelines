@@ -15,6 +15,17 @@ trigger:
       - readme.md
 
 stages: # agrupador lógico da pipeline para separação de responsabilidade (ex.: build, qa, e etc)
+- stage: Version
+  jobs:
+    - job: configure_version
+      displayName: Configure version
+      steps:
+        - task: gittools.gitversion.gitversion-task.GitVersion@5
+          displayName: GitVersion
+          inputs:
+            useConfigFile: true
+            configFilePath: GitVersion.yml
+
 - stage: Build
   jobs: # sequencia de passos executados em um agente
     - job: building_application
